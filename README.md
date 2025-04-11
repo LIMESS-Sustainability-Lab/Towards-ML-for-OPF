@@ -38,7 +38,7 @@ The goal is to provide insights into the feasibility, accuracy, and runtime of d
 - MSE benchmarking on scaled data  
 - Discussion of **feasibility, generalization**, and **real-time deployment risks**
 
-📄 Full paper: (link to proceedings will be added, now use this [DOI](https://doi.org/10.5281/zenodo.15193155)
+📄 Full paper: (link to proceedings will be added, now use this [DOI](https://doi.org/10.5281/zenodo.15193155))
 
 ## 🧪 Used Power Systems Test Cases for OPF Scenarios
 
