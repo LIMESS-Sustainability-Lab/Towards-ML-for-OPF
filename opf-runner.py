@@ -12,6 +12,7 @@ from sklearn.preprocessing import StandardScaler
 import pandas as pd
 import random
 import copy
+from tqdm import tqdm
 
 # ------------------------------
 # Set seeds for reproducibility of experiments, however similar results are obtained for different seeds
@@ -60,6 +61,10 @@ def generate_opf_dataset(case_name, n_scenarios=300,
     X_list = []
     Y_list = []
 
+    # Add progress bar for scenario generation
+    pbar = tqdm(total=n_scenarios, desc=f"Generating scenarios for {case_name}")
+    successful_scenarios = 0
+
     for _ in range(n_scenarios):
         # Copy the base network so each scenario starts from original conditions
         net = copy.deepcopy(base_net)
@@ -74,21 +79,26 @@ def generate_opf_dataset(case_name, n_scenarios=300,
         # Run OPF
         try:
             pp.runopp(net, verbose=False)
+            successful_scenarios += 1
+            
+            # Collect data
+            scenario_load_p = net.load['p_mw'].values
+            scenario_load_q = net.load['q_mvar'].values
+            X_scenario = np.hstack([scenario_load_p, scenario_load_q])
+
+            scenario_gen_p = net.res_gen['p_mw'].values
+            scenario_gen_vm = net.res_gen['vm_pu'].values
+            Y_scenario = np.hstack([scenario_gen_p, scenario_gen_vm])
+
+            X_list.append(X_scenario)
+            Y_list.append(Y_scenario)
         except pp.optimal_powerflow.OPFNotConverged:
-            # Skip scenario if OPF fails
-            continue
+            pass
+            
+        pbar.update(1)
+        pbar.set_postfix({'successful': successful_scenarios})
 
-        # Collect data
-        scenario_load_p = net.load['p_mw'].values
-        scenario_load_q = net.load['q_mvar'].values
-        X_scenario = np.hstack([scenario_load_p, scenario_load_q])
-
-        scenario_gen_p = net.res_gen['p_mw'].values
-        scenario_gen_vm = net.res_gen['vm_pu'].values
-        Y_scenario = np.hstack([scenario_gen_p, scenario_gen_vm])
-
-        X_list.append(X_scenario)
-        Y_list.append(Y_scenario)
+    pbar.close()
 
     X = np.array(X_list)
     Y = np.array(Y_list)
@@ -433,7 +443,11 @@ def runner(cases, n_scenarios, nn_param_grid, gmm_param_grid):
     results_gmm = []
     results_lr = []
 
-    for case in cases:
+    # Add progress bar for case processing
+    case_pbar = tqdm(cases, desc="Processing cases")
+    
+    for case in case_pbar:
+        case_pbar.set_description(f"Processing {case}")
         print(f"\n>>>> Processing {case} with up to {n_scenarios} scenarios...\n")
         X_raw, Y_raw = generate_opf_dataset(case, n_scenarios=n_scenarios)
 
@@ -521,6 +535,7 @@ def runner(cases, n_scenarios, nn_param_grid, gmm_param_grid):
             'Test MSE': lr_test_mse
         })
 
+    case_pbar.close()
     return results_nn, results_gmm, results_lr
 
 
