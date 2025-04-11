@@ -29,7 +29,7 @@ The goal is to provide insights into the feasibility, accuracy, and runtime of d
 **Main Contributions:**
 
 - A reproducible pipeline to extract input-output mappings from ACOPF solutions:  
-  \[(P_d, Q_d) \rightarrow (P_g, V_g)\]
+(P_d, Q_d) → (P_g, V_g)
 
 - Comparative analysis of NN, GMM, and LR across 5 power networks:
   - 🏆 NNs perform best in large/highly nonlinear grids
