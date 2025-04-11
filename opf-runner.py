@@ -14,7 +14,7 @@ import random
 import copy
 
 # ------------------------------
-# Set seeds for reproducibility, however th
+# Set seeds for reproducibility of experiments, however similar results are obtained for different seeds
 # ------------------------------
 SEED = 42
 np.random.seed(SEED)
