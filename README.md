@@ -41,15 +41,16 @@ The goal is to provide insights into the feasibility, accuracy, and runtime of d
 
 📄 Full paper: (link to proceedings will be added, now use this [DOI](https://doi.org/10.5281/zenodo.15193155))
 
-## 🧪 Example Test Systems
+## 🧪 Used Power Systems Test Cases for OPF Scenarios
 
-| Case              | Buses | Generators | Description                        |
-|------------------|-------|------------|------------------------------------|
-| `case30`         | 30    | 6          | Classic IEEE 30-bus system         |
-| `case_ieee30`    | 30    | 6          | Variant with minor topology tweaks|
-| `case39`         | 39    | 10         | New England benchmark              |
-| `case118`        | 118   | 54         | Large IEEE network                 |
-| `GBreducednetwork` | ~150 | Many       | UK transmission-level abstraction  |
+| Case               | Buses | Generators | Scenarios Used | Description                          |
+|-------------------|-------|------------|----------------|--------------------------------------|
+| `case30`          | 30    | 6          | 198            | Classic IEEE 30-bus system           |
+| `case_ieee30`     | 30    | 6          | 300            | Variant with minor topology tweaks  |
+| `case39`          | 39    | 10         | 299            | New England benchmark                |
+| `case118`         | 118   | 54         | 300            | Large IEEE network                   |
+| `GBreducednetwork`| ~150  | Many       | 300            | UK transmission-level abstraction    |
+
 
 ## 🧠 Model Architecture
 
