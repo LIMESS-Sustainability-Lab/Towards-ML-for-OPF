@@ -1,4 +1,3 @@
-
 # Towards Real-Time Machine Learning Approximations of AC Optimal Power Flow
 [![DOI](https://zenodo.org/badge/964373548.svg)](https://doi.org/10.5281/zenodo.15193155)
 
@@ -74,6 +73,62 @@ Each architecture is tuned using grid search on:
 
 ---
 
+## ⚙️ Installation
+
+1. Clone this repository:
+```bash
+git clone https://github.com/LIMESS-Sustainability-Lab/Towards-ML-for-OPF.git
+cd Towards-ML-for-OPF
+```
+
+2. Create and activate a virtual environment (recommended):
+```bash
+# On Windows
+python -m venv venv
+.\venv\Scripts\activate
+
+# On Linux/Mac
+python -m venv venv
+source venv/bin/activate
+```
+
+3. Install the required dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+## 🚀 Usage
+
+The main script `opf-runner.py` can be run directly:
+
+```bash
+python opf-runner.py
+```
+
+This will:
+1. Generate up to 300 OPF scenarios for multiple OPF scheme test cases
+2. Train and evaluate different models (Neural Network, GMM-GMR, Linear Regression)
+3. Output the results showing performance on test sets
+
+The script includes several test cases:
+- case30
+- case_ieee30
+- case39
+- case118
+- GBreducednetwork
+
+## 📃 Requirements
+
+The project requires Python 3.8 or higher and the following packages:
+- pandapower>=2.14.0
+- scikit-learn>=1.3.0
+- matplotlib>=3.7.0
+- numpy>=1.24.0
+- torch>=2.0.0
+- pandas>=2.0.0
+
+All dependencies are listed in `requirements.txt` and can be installed using pip as shown in the installation instructions.
+
 ## 📌 Known Limitations
 
 - Only a single ACOPF sample is used per case → no time-series/load diversity  
@@ -92,7 +147,7 @@ To automatically generate a citation, you can use GitHub's "Cite this repository
 
 ## 🤝 Acknowledgments
 
-This work was supported by the grant **SGS24/093/OHK5/2T/13** and the **CTU Distinguished co-supervisor grant**.
+This work was supported by the grant **SGS24/093/OHK5/2T/13** and the **CTU Distinguished Co-Supervisor Grant**.
 
 We gratefully acknowledge the contributions of the open-source community, whose tools made this research possible:
 
@@ -101,7 +156,3 @@ We gratefully acknowledge the contributions of the open-source community, whose 
 - [scikit-learn](https://scikit-learn.org/) — for baseline models and preprocessing utilities
 
 We also thank the maintainers of the IEEE benchmark networks for providing standardized test cases used in this study.
-
-
-
-
