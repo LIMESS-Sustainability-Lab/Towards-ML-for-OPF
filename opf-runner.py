@@ -195,9 +195,13 @@ def train_model(model, train_loader, val_loader, epochs, learning_rate, patience
     patience_counter = 0
     best_model_state = None
 
-    for epoch in range(epochs):
+    # Add progress bar for epochs
+    epoch_pbar = tqdm(range(epochs), desc="Training", leave=False)
+
+    for epoch in epoch_pbar:
         # Training
         model.train()
+        train_loss = 0.0
         for inputs, targets in train_loader:
             inputs, targets = inputs.to(device), targets.to(device)
             optimizer.zero_grad()
@@ -205,12 +209,17 @@ def train_model(model, train_loader, val_loader, epochs, learning_rate, patience
             loss = criterion(predictions, targets)
             loss.backward()
             optimizer.step()
+            train_loss += loss.item()
 
         scheduler.step()
 
         # Validation
         if use_early_stopping and val_loader is not None:
             val_loss = evaluate_model(model, val_loader, device)
+            epoch_pbar.set_postfix({
+                'train_loss': f"{train_loss/len(train_loader):.4f}",
+                'val_loss': f"{val_loss:.4f}"
+            })
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
                 patience_counter = 0
@@ -221,6 +230,10 @@ def train_model(model, train_loader, val_loader, epochs, learning_rate, patience
                     if best_model_state is not None:
                         model.load_state_dict(best_model_state)
                     break
+        else:
+            epoch_pbar.set_postfix({'train_loss': f"{train_loss/len(train_loader):.4f}"})
+
+    epoch_pbar.close()
 
     # Restore best model if validation was used
     if use_early_stopping and best_model_state is not None:
@@ -394,7 +407,10 @@ def hyperparameter_tuning_gmm_gmr(X_train, Y_train, X_val, Y_val, param_grid):
     best_loss = float('inf')
 
     n_samples = X_train.shape[0]
-    for params in ParameterGrid(param_grid):
+    # Add progress bar for parameter grid search
+    param_pbar = tqdm(ParameterGrid(param_grid), desc="GMM-GMR Grid Search", leave=False)
+    
+    for params in param_pbar:
         n_components = params['n_components']
         covariance_type = params['covariance_type']
         reg_covar = params['reg_covar']
@@ -410,6 +426,7 @@ def hyperparameter_tuning_gmm_gmr(X_train, Y_train, X_val, Y_val, param_grid):
             )
             Y_val_pred = predict_gmr(gmm, X_val, x_dim, y_dim)
             val_mse = np.mean((Y_val_pred - Y_val)**2)
+            param_pbar.set_postfix({'val_mse': val_mse})
 
             if val_mse < best_loss:
                 best_loss = val_mse
@@ -418,6 +435,7 @@ def hyperparameter_tuning_gmm_gmr(X_train, Y_train, X_val, Y_val, param_grid):
             print(f"Skipping GMM with {params} due to error: {e}")
             continue
 
+    param_pbar.close()
     return best_params, best_loss
 
 def run_gmm_gmr_on_dataset(X_in, Y_in, best_params):
@@ -465,10 +483,12 @@ def runner(cases, n_scenarios, nn_param_grid, gmm_param_grid):
         )
         print(f"Data Split => Train: {len(X_train)}, Val: {len(X_val)}, Test: {len(X_test)}")
 
-        # 1) Neural Network Hyperparameter Tuning on Train/Val
+        # 1) Neural Network Hyperparameter Tuning and Training
+        print("\nTraining Neural Network...")
         best_nn_params, best_nn_val_loss = hyperparameter_tuning_nn(
             X_train, Y_train, X_val, Y_val, nn_param_grid
         )
+        
         # Retrain best NN on Train+Val
         X_tv = np.vstack([X_train, X_val])
         Y_tv = np.vstack([Y_train, Y_val])
@@ -488,19 +508,22 @@ def runner(cases, n_scenarios, nn_param_grid, gmm_param_grid):
             learning_rate=best_nn_params['learning_rate'],
             patience=3
         )
+        
         # Evaluate on Test
+        print("\nEvaluating Neural Network...")
         nn_test_mse = run_inference_mse(model_tv, X_test, Y_test)
 
         # 2) GMM-GMR Hyperparam Tuning on Train/Val
+        print("\nTuning GMM-GMR...")
         best_gmm_params, best_gmm_val_loss = hyperparameter_tuning_gmm_gmr(
             X_train, Y_train, X_val, Y_val, gmm_param_grid
         )
 
         # Retrain best GMM on Train+Val
+        print("\nTraining final GMM-GMR...")
         if best_gmm_params is not None:
             gmm_tv, gmm_tv_mse = run_gmm_gmr_on_dataset(X_tv, Y_tv, best_gmm_params)
             # Evaluate on Test
-            # We'll do GMR predictions on X_test
             gmm_xdim = X_tv.shape[1]
             gmm_ydim = Y_tv.shape[1]
             Y_test_pred = predict_gmr(gmm_tv, X_test, gmm_xdim, gmm_ydim)
@@ -510,6 +533,7 @@ def runner(cases, n_scenarios, nn_param_grid, gmm_param_grid):
             gmm_test_mse = np.nan
 
         # 3) Linear Regression on Train+Val -> Test
+        print("\nTraining and evaluating Linear Regression...")
         lr_model = LinearRegression().fit(X_tv, Y_tv)
         lr_test_preds = lr_model.predict(X_test)
         lr_test_mse = np.mean((lr_test_preds - Y_test)**2)
@@ -548,6 +572,10 @@ def hyperparameter_tuning_nn(X_train, Y_train, X_val, Y_val, param_grid):
     train_dataset = OPFDataset(X_train, Y_train)
     val_dataset   = OPFDataset(X_val,   Y_val)
 
+    # Calculate total iterations for progress bar
+    total_iters = len(list(ParameterGrid(param_grid)))
+    pbar = tqdm(total=total_iters, desc="NN Hyperparameter Tuning", leave=False)
+
     for params in ParameterGrid(param_grid):
         train_loader = DataLoader(train_dataset, batch_size=params['batch_size'], shuffle=True)
         val_loader   = DataLoader(val_dataset,   batch_size=params['batch_size'], shuffle=False)
@@ -566,10 +594,15 @@ def hyperparameter_tuning_nn(X_train, Y_train, X_val, Y_val, param_grid):
             learning_rate=params['learning_rate'],
             patience=params.get('patience', 5)
         )
+        
+        pbar.update(1)
+        pbar.set_postfix({'best_val_loss': best_loss, 'current_val_loss': val_loss})
+        
         if val_loss < best_loss:
             best_loss = val_loss
             best_params = params
 
+    pbar.close()
     return best_params, best_loss
 
 
